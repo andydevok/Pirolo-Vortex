@@ -1,0 +1,105 @@
+# ==============================================================================
+# SCRIPT FOR GOOGLE COLAB: PIROLO VORTEX VISUALIZATION (BLACK THEME)
+# ==============================================================================
+# This script visualizes the Pirolo Vortex with a professional, dark aesthetic.
+# It will attempt to load real data, but if it fails, it will generate
+# virtual data to ensure the visualization always runs.
+
+# --- 1. Library Installation ---
+!pip install numpy matplotlib sympy tqdm
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sympy import primerange
+from tqdm import tqdm
+import os
+
+print("✅ Libraries installed and imported.")
+
+# --- 2. Data Loading and Generation ---
+# For a real analysis, you SHOULD download the "zeros6" file from:
+# http://www.dtc.umn.edu/~odlyzko/zeta_tables/index.html
+# and upload it to your Colab session.
+
+ZERO_DATA_FILE = 'zeros6.txt'
+NUM_ZEROS_TO_PLOT = 1000
+
+print("\n⚙️  Searching for real Riemann zero data...")
+
+if os.path.exists(ZERO_DATA_FILE):
+    print(f"   - ✅ Success! Found '{ZERO_DATA_FILE}'. Loading real data...")
+    all_zeros = np.loadtxt(ZERO_DATA_FILE)
+    zeros_to_plot = all_zeros[:NUM_ZEROS_TO_PLOT]
+    print(f"      Loaded {len(all_zeros):,} zeros. Will plot the first {NUM_ZEROS_TO_PLOT}.")
+else:
+    print(f"   - ⚠️ WARNING: Real data file '{ZERO_DATA_FILE}' not found.")
+    print("      Generating VIRTUAL ZEROS for demonstration purposes.")
+    zeros_to_plot = np.linspace(14.13, 1350, NUM_ZEROS_TO_PLOT)
+    print(f"      Created {len(zeros_to_plot)} virtual zeros.")
+
+# --- 3. Generate the Prime Lens ---
+print("\n⚙️  Generating the prime number lens...")
+PRIME_LENS_SIZE = 10000
+prime_lens = np.array(list(primerange(1, 120000)))[:PRIME_LENS_SIZE]
+log_primes = np.log(prime_lens)
+print(f"   - Lens with {len(prime_lens):,} primes created.")
+
+# --- 4. The Core Vortex Projection Function ---
+def project_zero_to_vortex(zero_imag_part, lens, log_lens):
+    """
+    Calculates the (x, y, z) coordinates of a zero in the Pirolo Vortex.
+    Assumes sigma=0.5 for visualization (s = 0.5 + i*t).
+    """
+    angles = zero_imag_part * log_lens
+    x = np.mean(np.cos(angles))
+    y = np.mean(np.sin(angles))
+    z = np.log10(zero_imag_part)
+    return [x, y, z]
+
+# --- 5. Project the Zeros into the Vortex ---
+print("\n🛰️  Projecting the zeros into the 3D Vortex space...")
+vortex_coordinates = []
+for zero in tqdm(zeros_to_plot, desc="Calculating coordinates"):
+    coords = project_zero_to_vortex(zero, prime_lens, log_primes)
+    vortex_coordinates.append(coords)
+vortex_coordinates = np.array(vortex_coordinates)
+print("✅ Projection complete.")
+
+# --- 6. Visualize the 3D Plot (BLACK BACKGROUND) ---
+print("\n🎨 Generating the 3D plot with a black background...")
+
+# **AQUÍ ESTÁ LA MAGIA**
+# Usamos el estilo 'dark_background' para el texto y los ejes claros.
+plt.style.use('dark_background')
+fig = plt.figure(figsize=(14, 10))
+
+# **Forzamos el fondo de la figura a ser negro puro.**
+fig.patch.set_facecolor('black')
+
+ax = fig.add_subplot(111, projection='3d')
+
+# **Forzamos el fondo del área del gráfico a ser negro puro también.**
+ax.set_facecolor('black')
+
+# Cambiamos el color de los bordes (el "marco") para que sean grises y sutiles.
+ax.xaxis.pane.set_facecolor((0.1, 0.1, 0.1, 1.0))
+ax.yaxis.pane.set_facecolor((0.1, 0.1, 0.1, 1.0))
+ax.zaxis.pane.set_facecolor((0.1, 0.1, 0.1, 1.0))
+
+xs = vortex_coordinates[:, 0]
+ys = vortex_coordinates[:, 1]
+zs = vortex_coordinates[:, 2]
+
+scatter = ax.scatter(xs, ys, zs, c=zs, cmap='spring', s=35, label='Riemann Zero Projections')
+ax.plot(xs, ys, zs, color='cyan', alpha=0.4, linewidth=1)
+
+ax.set_title('The Pirolo Vortex: Geometric Structure of Riemann Zeros', fontsize=20, pad=20, color='white')
+ax.set_xlabel('X-Component', fontsize=12, color='white')
+ax.set_ylabel('Y-Component', fontsize=12, color='white')
+ax.set_zlabel('Z-Component (log10 of Zero Height)', fontsize=12, color='white')
+
+# Configurar color de la leyenda
+legend = ax.legend()
+plt.setp(legend.get_texts(), color='white')
+
+plt.show()
